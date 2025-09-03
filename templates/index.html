@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Instagram Username Checker — Tailwind Mobile Friendly</title>
+  <!-- Tailwind CDN for quick prototyping -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-50 text-gray-800 antialiased">
+  <div class="min-h-screen flex items-start justify-center p-4">
+    <main class="w-full max-w-xl bg-white rounded-2xl shadow-lg p-5 sm:p-7">
+      <header class="text-center mb-4">
+        <h1 class="text-2xl font-extrabold text-indigo-600">
+          <i class="fa-brands fa-instagram mr-2"></i>Instagram Username Checker
+        </h1>
+        <p class="text-sm text-gray-500 mt-1">Check many usernames quickly — optimized for mobile</p>
+      </header>
+
+      <!-- Tabs -->
+      <div class="space-y-4">
+        <div class="flex gap-2" role="tablist" aria-label="Input method">
+          <button id="btnFile" class="flex-1 py-2 rounded-xl bg-indigo-50 text-indigo-700 font-semibold shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-300" onclick="switchTab('file')" aria-controls="tab-file" aria-selected="true">
+            <i class="fa-solid fa-file mr-1"></i> Upload File
+          </button>
+          <button id="btnText" class="flex-1 py-2 rounded-xl bg-gray-100 text-gray-700 font-semibold shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-300" onclick="switchTab('text')" aria-controls="tab-text" aria-selected="false">
+            <i class="fa-solid fa-keyboard mr-1"></i> Enter Text
+          </button>
+        </div>
+
+        <!-- File tab -->
+        <section id="tab-file" class="tab-panel block rounded-xl border border-gray-100 p-4 bg-white">
+          <h2 class="text-lg font-semibold"><i class="fa-solid fa-file-import mr-2 text-indigo-500"></i>Upload a file</h2>
+          <p class="text-sm text-gray-500">JSON or TXT — one username per line (or an array in JSON).</p>
+          <div class="mt-3">
+            <input id="fileInput" type="file" accept=".json,.txt" class="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700" />
+          </div>
+          <button onclick="uploadFile()" class="mt-4 w-full py-3 rounded-xl bg-red-600 text-white font-semibold shadow hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-300">
+            <i class="fa-solid fa-magnifying-glass mr-2"></i> Start Checking
+          </button>
+        </section>
+
+        <!-- Text tab -->
+        <section id="tab-text" class="tab-panel hidden rounded-xl border border-gray-100 p-4 bg-white">
+          <h2 class="text-lg font-semibold"><i class="fa-solid fa-keyboard mr-2 text-indigo-500"></i>Enter Usernames</h2>
+          <p class="text-sm text-gray-500">One username per line.</p>
+          <textarea id="usernameInput" rows="6" placeholder="user1\nuser2\n..." class="mt-3 w-full rounded-xl border border-gray-200 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200" ></textarea>
+          <button onclick="uploadText()" class="mt-4 w-full py-3 rounded-xl bg-red-600 text-white font-semibold shadow hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-300">
+            <i class="fa-solid fa-magnifying-glass mr-2"></i> Start Checking
+          </button>
+        </section>
+      </div>
+
+      <!-- Progress & Stats -->
+      <section id="progressSection" class="mt-5 hidden">
+        <h3 class="text-base font-semibold"><i class="fa-solid fa-chart-simple mr-2 text-indigo-500"></i>Progress</h3>
+        <div class="mt-3 w-full bg-gray-200 rounded-full h-4 overflow-hidden">
+          <div id="progressBar" class="h-4 rounded-full bg-green-600 transition-all duration-300" style="width:0%"></div>
+        </div>
+        <p id="progressText" class="mt-2 text-sm text-gray-600">Processed: 0/0 (0%)</p>
+
+        <div class="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div class="p-3 bg-red-50 rounded-lg text-center border border-red-100">
+            <div id="activeCount" class="text-xl font-bold text-red-600">0</div>
+            <div class="text-xs text-gray-500"><i class="fa-solid fa-user-check mr-1"></i> Active</div>
+          </div>
+          <div class="p-3 bg-green-50 rounded-lg text-center border border-green-100">
+            <div id="availableCount" class="text-xl font-bold text-green-700">0</div>
+            <div class="text-xs text-gray-500"><i class="fa-solid fa-user-plus mr-1"></i> Available</div>
+          </div>
+          <div class="p-3 bg-yellow-50 rounded-lg text-center border border-yellow-100">
+            <div id="errorCount" class="text-xl font-bold text-yellow-700">0</div>
+            <div class="text-xs text-gray-500"><i class="fa-solid fa-triangle-exclamation mr-1"></i> Error</div>
+          </div>
+          <div class="p-3 bg-gray-50 rounded-lg text-center border border-gray-100">
+            <div id="totalCount" class="text-xl font-bold">0</div>
+            <div class="text-xs text-gray-500"><i class="fa-solid fa-list-ol mr-1"></i> Total</div>
+          </div>
+        </div>
+
+        <div class="mt-4 flex gap-3">
+          <button id="cancelButton" onclick="cancelProcessing()" class="flex-1 py-2 rounded-xl bg-red-600 text-white font-semibold shadow focus:outline-none hover:bg-red-700">
+            <i class="fa-solid fa-xmark mr-1"></i> Cancel
+          </button>
+          <button id="downloadButton" onclick="downloadResults()" class="flex-1 py-2 rounded-xl bg-green-600 text-white font-semibold shadow hidden hover:bg-green-700">
+            <i class="fa-solid fa-download mr-1"></i> Download
+          </button>
+        </div>
+      </section>
+
+      <!-- Results -->
+      <section class="mt-5">
+        <h3 class="text-base font-semibold"><i class="fa-solid fa-list-check mr-2 text-indigo-500"></i>Results</h3>
+        <div id="resultsContainer" class="mt-3 space-y-2 max-h-72 overflow-auto pb-2"></div>
+      </section>
+
+      <footer class="mt-5 text-xs text-gray-400 text-center">Make sure your backend exposes <code class="bg-gray-100 px-1 py-0.5 rounded">/upload</code>, <code class="bg-gray-100 px-1 py-0.5 rounded">/status/:id</code>, <code class="bg-gray-100 px-1 py-0.5 rounded">/cancel/:id</code>, and <code class="bg-gray-100 px-1 py-0.5 rounded">/download/:id</code>.</footer>
+    </main>
+  </div>
+
+  <script>
+    // State
+    let sessionId = null;
+    let totalUsernames = 0;
+    let processedCount = 0;
+    let activeCount = 0;
+    let availableCount = 0;
+    let errorCount = 0;
+    let pollInterval = null;
+
+    function switchTab(tab) {
+      const fileTab = document.getElementById('tab-file');
+      const textTab = document.getElementById('tab-text');
+      const btnFile = document.getElementById('btnFile');
+      const btnText = document.getElementById('btnText');
+
+      if (tab === 'file') {
+        fileTab.classList.remove('hidden');
+        textTab.classList.add('hidden');
+        btnFile.classList.add('bg-indigo-50', 'text-indigo-700');
+        btnFile.classList.remove('bg-gray-100', 'text-gray-700');
+        btnText.classList.add('bg-gray-100', 'text-gray-700');
+        btnText.classList.remove('bg-indigo-50','text-indigo-700');
+      } else {
+        textTab.classList.remove('hidden');
+        fileTab.classList.add('hidden');
+        btnText.classList.add('bg-indigo-50','text-indigo-700');
+        btnText.classList.remove('bg-gray-100', 'text-gray-700');
+        btnFile.classList.add('bg-gray-100', 'text-gray-700');
+        btnFile.classList.remove('bg-indigo-50','text-indigo-700');
+      }
+    }
+
+    function uploadFile(){
+      const fileInput = document.getElementById('fileInput');
+      const file = fileInput.files[0];
+      if (!file) return alert('Please select a file');
+
+      const formData = new FormData();
+      formData.append('file', file);
+      startProcessing(formData);
+    }
+
+    function uploadText(){
+      const usernameInput = document.getElementById('usernameInput');
+      const usernames = usernameInput.value.trim();
+      if (!usernames) return alert('Please enter at least one username');
+
+      const formData = new FormData();
+      formData.append('usernames', usernames);
+      startProcessing(formData);
+    }
+
+    function startProcessing(formData){
+      fetch('/upload', { method: 'POST', body: formData })
+        .then(r => r.json())
+        .then(data => {
+          if (data.error) return alert(data.error);
+
+          sessionId = data.session_id;
+          totalUsernames = data.count || 0;
+          processedCount = 0; activeCount = 0; availableCount = 0; errorCount = 0;
+
+          document.getElementById('progressSection').classList.remove('hidden');
+          document.getElementById('resultsContainer').innerHTML = '';
+          document.getElementById('activeCount').textContent = '0';
+          document.getElementById('availableCount').textContent = '0';
+          document.getElementById('errorCount').textContent = '0';
+          document.getElementById('totalCount').textContent = totalUsernames;
+          document.getElementById('cancelButton').classList.remove('hidden');
+          document.getElementById('downloadButton').classList.add('hidden');
+
+          updateProgress();
+
+          if (pollInterval) clearInterval(pollInterval);
+          pollInterval = setInterval(pollStatus, 1000);
+        })
+        .catch(err => { console.error(err); alert('Upload failed'); });
+    }
+
+    function pollStatus(){
+      if (!sessionId) return;
+      fetch(`/status/${sessionId}`).then(r=>r.json()).then(data=>{
+        if (data.error){ console.error('Polling error', data.error); clearInterval(pollInterval); return; }
+
+        if (data.status_updates && data.status_updates.length){
+          data.status_updates.forEach(update => {
+            const node = document.createElement('div');
+            node.className = 'text-xs text-gray-500 bg-gray-50 p-2 rounded-lg flex items-center';
+            node.innerHTML = `<i class="fa-solid fa-info-circle mr-2 text-blue-500"></i> ${update.message}`;
+            document.getElementById('resultsContainer').prepend(node);
+          });
+        }
+
+        if (data.new_results && data.new_results.length){
+          data.new_results.forEach(result => {
+            processedCount++;
+            const node = document.createElement('div');
+            node.className = 'p-3 rounded-lg text-sm shadow-sm flex items-center';
+            
+            let icon = '';
+            if (result.status === 'ACTIVE') {
+              node.classList.add('bg-red-50','text-red-700','border','border-red-100');
+              icon = '<i class="fa-solid fa-user-check mr-3 text-red-600"></i>';
+              activeCount++;
+            } else if (result.status === 'AVAILABLE') {
+              node.classList.add('bg-green-50','text-green-700','border','border-green-100');
+              icon = '<i class="fa-solid fa-user-plus mr-3 text-green-600"></i>';
+              availableCount++;
+            } else if (result.status === 'ERROR') {
+              node.classList.add('bg-yellow-50','text-yellow-700','border','border-yellow-100');
+              icon = '<i class="fa-solid fa-triangle-exclamation mr-3 text-yellow-600"></i>';
+              errorCount++;
+            } else {
+              node.classList.add('bg-gray-50','text-gray-700','border','border-gray-100');
+              icon = '<i class="fa-solid fa-question mr-3 text-gray-600"></i>';
+            }
+
+            node.innerHTML = `${icon}<span class="font-medium">${result.username || result.message}</span>`;
+            document.getElementById('resultsContainer').prepend(node);
+
+            document.getElementById('activeCount').textContent = activeCount;
+            document.getElementById('availableCount').textContent = availableCount;
+            document.getElementById('errorCount').textContent = errorCount;
+          });
+
+          updateProgress();
+        }
+
+        if (data.completed) {
+          clearInterval(pollInterval);
+          document.getElementById('downloadButton').classList.remove('hidden');
+          document.getElementById('cancelButton').classList.add('hidden');
+          console.log('Processing completed', data.stats || '');
+        }
+
+      }).catch(err=>{ console.error('Polling error', err); });
+    }
+
+    function cancelProcessing(){
+      if (!sessionId) return;
+      fetch(`/cancel/${sessionId}`, { method: 'POST' })
+        .then(r=>r.json())
+        .then(data=>{
+          if (data.error) return alert(data.error);
+          clearInterval(pollInterval);
+          document.getElementById('cancelButton').classList.add('hidden');
+          document.getElementById('downloadButton').classList.add('hidden');
+          
+          // Add a cancellation notice
+          const node = document.createElement('div');
+          node.className = 'text-xs text-gray-500 bg-gray-50 p-2 rounded-lg flex items-center';
+          node.innerHTML = `<i class="fa-solid fa-ban mr-2 text-red-500"></i> Processing cancelled by user`;
+          document.getElementById('resultsContainer').prepend(node);
+          
+          console.log(data.message || 'Cancelled');
+        }).catch(err=>{ console.error(err); });
+    }
+
+    function downloadResults(){ if (sessionId) window.location.href = `/download/${sessionId}`; }
+
+    function updateProgress(){
+      const percentage = totalUsernames > 0 ? (processedCount / totalUsernames) * 100 : 0;
+      document.getElementById('progressBar').style.width = percentage + '%';
+      document.getElementById('progressText').textContent = `Processed: ${processedCount}/${totalUsernames} (${percentage.toFixed(1)}%)`;
+    }
+  </script>
+</body>
+                                                                                                                                                                                                                     </html>
